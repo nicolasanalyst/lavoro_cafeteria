@@ -199,8 +199,8 @@
                             </ul>
                         </div>
 
-                        <!-- Intensidade -->
-                        <div class="mb-6">
+                        <!-- Intensidade (ID adicionado para controle via JS) -->
+                        <div id="modal-intensity-section" class="mb-6">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm font-bold text-coffee-400 uppercase tracking-wide">Intensidade</span>
                                 <span id="modal-intensity-text" class="text-xs font-bold text-coffee-600">Forte</span>
@@ -227,6 +227,7 @@
     <!-- Scripts da Aplicação -->
     <script>
         // Dados do Menu
+        // NOTA: Intensidade foi removida dos pratos (Quiche, Pão de Queijo, Cannoli)
         const menuData = [
             {
                 id: 1,
@@ -245,7 +246,7 @@
                 price: "R$ 14,90",
                 description: "Uma torta salgada de origem francesa, preparada com base de massa amanteigada e recheio cremoso à base de ovos, creme de leite e uma seleção especial de queijos. Rica em sabor e perfeita para qualquer momento do dia.",
                 composition: ["Massa amanteigada", "Mussarela", "Parmesão", "Gorgonzola", "Queijo Prato", "Creme de leite", "Temperos finos"],
-                intensity: 5,
+                // Sem intensidade para comida
                 image: "img/prato.jpeg"
             },
             {
@@ -265,7 +266,7 @@
                 price: "R$ 7,90",
                 description: "'Um clássico da culinária brasileira, preparado com massa macia por dentro e levemente crocante por fora. Feito à base de polvilho e queijo, é ideal para acompanhar cafés e bebidas quentes em qualquer momento do dia.",
                 composition: ["Polvilho", "Queijo", "Leite", "Ovos", "Óleo", "Sal"],
-                intensity: 2,
+                // Sem intensidade para comida
                 image: "img/pãoqueijo.jpeg"
             },
             {
@@ -285,7 +286,7 @@
                 price: "R$ 7,90",
                 description: "Uma clássica sobremesa italiana feita com massa crocante em formato de tubo, recheada com um creme suave e delicadamente adocicado. Uma combinação perfeita entre textura e sabor, ideal para quem aprecia doces refinados e artesanais.",
                 composition: ["Massa crocante artesanal","Açúcar de confeiteiro", "Doce de leite"],
-                intensity: 1,
+                // Sem intensidade para comida
                 image: "img/sobremesa.jpeg"
             }
         ];
@@ -373,8 +374,10 @@
                         <p class="text-coffee-600 text-sm line-clamp-2 mb-4 flex-1">${item.description}</p>
                         <div class="flex items-center gap-2 text-xs text-coffee-400 font-bold uppercase tracking-wider">
                             <span>${item.category}</span>
-                            <span class="w-1 h-1 bg-coffee-300 rounded-full"></span>
-                            <span>Intensidade ${item.intensity}/5</span>
+                            ${item.intensity ? `
+                                <span class="w-1 h-1 bg-coffee-300 rounded-full"></span>
+                                <span>Intensidade ${item.intensity}/5</span>
+                            ` : ''}
                         </div>
                     </div>
                 </div>
@@ -384,7 +387,6 @@
         }
 
         // Lógica do Modal
-        // Alteração Principal: Recebe o 'element' (card clicado)
         function openModal(id, element) {
             const item = menuData.find(i => i.id === id);
             if (!item) return;
@@ -393,10 +395,9 @@
             document.getElementById('modal-title').innerText = item.name;
             const modalImg = document.getElementById('modal-image');
             
-            // Lógica de "pegar a imagem que já está lá"
+            // Lógica de "pegar a imagem que já está lá" (Mantida da versão anterior)
             if (element) {
                 const gridImg = element.querySelector('img');
-                // Se existe imagem no grid e ela tem um src carregado (mesmo que seja o fallback ou cache)
                 if (gridImg && gridImg.currentSrc) {
                      modalImg.src = gridImg.currentSrc;
                 } else if (gridImg && gridImg.src) {
@@ -418,19 +419,29 @@
                 `<li class="flex items-start gap-2"><div class="w-1.5 h-1.5 mt-1.5 rounded-full bg-coffee-400"></div>${c}</li>`
             ).join('');
 
-            // Popula barra de intensidade
-            const intensityPercent = (item.intensity / 5) * 100;
-            const bar = document.getElementById('modal-intensity-bar');
-            bar.style.width = `${intensityPercent}%`;
+            // Lógica da Intensidade (Mostrar/Esconder)
+            const intensitySection = document.getElementById('modal-intensity-section');
             
-            // Texto da intensidade
-            const intensityText = item.intensity <= 2 ? "Suave" : item.intensity <= 4 ? "Equilibrado" : "Intenso";
-            document.getElementById('modal-intensity-text').innerText = `${intensityText} (${item.intensity}/5)`;
+            if (item.intensity) {
+                // Se tiver intensidade (Bebidas), mostra e preenche
+                intensitySection.classList.remove('hidden');
+                
+                const intensityPercent = (item.intensity / 5) * 100;
+                const bar = document.getElementById('modal-intensity-bar');
+                bar.style.width = `${intensityPercent}%`;
+                
+                // Texto da intensidade
+                const intensityText = item.intensity <= 2 ? "Suave" : item.intensity <= 4 ? "Equilibrado" : "Intenso";
+                document.getElementById('modal-intensity-text').innerText = `${intensityText} (${item.intensity}/5)`;
 
-            // Cores da barra
-            bar.className = `h-2.5 rounded-full ${
-                item.intensity >= 4 ? 'bg-coffee-800' : 'bg-coffee-500'
-            }`;
+                // Cores da barra
+                bar.className = `h-2.5 rounded-full ${
+                    item.intensity >= 4 ? 'bg-coffee-800' : 'bg-coffee-500'
+                }`;
+            } else {
+                // Se não tiver intensidade (Comida), esconde a seção
+                intensitySection.classList.add('hidden');
+            }
 
             // Mostra o modal
             modal.classList.remove('hidden');
@@ -438,7 +449,7 @@
                 modal.querySelector('div[class*="transform"]').classList.remove('scale-95', 'opacity-0');
             }, 10);
             
-            document.body.style.overflow = 'hidden'; // Impede scroll no fundo
+            document.body.style.overflow = 'hidden';
         }
 
         function closeModal() {
@@ -450,7 +461,6 @@
             }, 200);
         }
 
-        // Fecha modal com ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') closeModal();
         });
